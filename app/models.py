@@ -4,3 +4,7 @@ class Todo(BaseModel): # Define a Pydantic model called Todo that inherits from 
     title: str
     description: str
     completed: bool = False
+
+class User(BaseModel):
+    email: str
+    password: str
