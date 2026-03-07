@@ -1,6 +1,10 @@
 async function createTodo(){
-    const title = document.getElementById("title").value
-    const desc = document.getElementById("desc").value
+    const titleEl = document.getElementById("title")
+    const descEl = document.getElementById("desc")
+    if(!titleEl || !descEl) return
+    
+    const title = titleEl.value
+    const desc = descEl.value
     if(!title || !desc) return alert("All the fields are required")
     const user_id = localStorage.getItem("user_id")
     if(!user_id) return alert("Please login first")
@@ -14,8 +18,8 @@ async function createTodo(){
             body: JSON.stringify({title: title, description: desc, completed: false})
         })
         if(response.ok) {
-            document.getElementById("title").value = ""
-            document.getElementById("desc").value = ""
+            titleEl.value = ""
+            descEl.value = ""
             getTodos()
         } else {
             alert("Failed to create todo")
@@ -27,12 +31,17 @@ async function createTodo(){
 
 async function getTodos() {
     const todos = document.getElementById("todo-list")
+    if(!todos) return
+    
     const user_id = localStorage.getItem("user_id")
     if(!user_id) return
     
     try {
         const response = await fetch(`/todos/${user_id}`)
-        if(!response.ok) alert("Failed to fetch todos")
+        if(!response.ok) {
+            console.error("Failed to fetch todos")
+            return
+        }
         const data = await response.json()
         todos.innerHTML = ""
         if(Array.isArray(data)) {
@@ -53,16 +62,24 @@ async function getTodos() {
 }
 
 function editTodo(id, title, description) {
-    document.getElementById("title").value = title
-    document.getElementById("desc").value = description
+    const titleEl = document.getElementById("title")
+    const descEl = document.getElementById("desc")
     const button = document.getElementById("submit-btn")
+    if(!titleEl || !descEl || !button) return
+    
+    titleEl.value = title
+    descEl.value = description
     button.innerText = "Update"
     button.onclick = () => updateTodo(id)
 }
 
 async function updateTodo(id) {
-    const title = document.getElementById("title").value
-    const desc = document.getElementById("desc").value
+    const titleEl = document.getElementById("title")
+    const descEl = document.getElementById("desc")
+    if(!titleEl || !descEl) return
+    
+    const title = titleEl.value
+    const desc = descEl.value
     
     try {
         const response = await fetch(`/todos/${id}`, {
@@ -77,11 +94,13 @@ async function updateTodo(id) {
             })
         })
         if(response.ok) {
-            document.getElementById("title").value = ""
-            document.getElementById("desc").value = ""
+            titleEl.value = ""
+            descEl.value = ""
             const button = document.getElementById("submit-btn")
-            button.innerText = "Add"
-            button.onclick = () => createTodo()
+            if(button) {
+                button.innerText = "Add"
+                button.onclick = () => createTodo()
+            }
             getTodos()
         } else {
             alert("Failed to update todo")
@@ -178,8 +197,17 @@ async function logout(){
     window.location.href = "/login"
 }
 
-if(window.location.pathname === "/"){
-    const user = localStorage.getItem("user_id")
-    if(!user) window.location.href = "/login"
-    else getTodos()
+function googleLogin(){
+    window.location.href="/auth/google"
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+    if(window.location.pathname === "/"){
+        const user = localStorage.getItem("user_id")
+        if(!user) {
+            window.location.href = "/login"
+        } else {
+            getTodos()
+        }
+    }
+});

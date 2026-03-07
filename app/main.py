@@ -4,8 +4,16 @@ from fastapi.responses import HTMLResponse # response type used to return HTML p
 from fastapi.templating import Jinja2Templates # class used to load and render HTML files
 from fastapi import Request # Request represents the HTTP request coming from the browser. eg: GET / . It contains information like: URL, headers, cookies, client info
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
+from app import oauth_config  # noqa: F401
+import os
 
 app = FastAPI() # Create a FastAPI instance or Creates the main application object.
+
+# Add SessionMiddleware for OAuth session management
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SECRET_KEY", "your-secret-key-change-in-production"))
+
+
 
 app.include_router(router) # Include the router from the routes module to handle API endpoints
 app.mount("/static", StaticFiles(directory="static"), name="static") # Mount the static files directory to serve CSS, JavaScript, and images. The URL path /static will be used to access these files.

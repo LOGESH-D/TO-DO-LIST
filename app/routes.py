@@ -3,6 +3,9 @@ from app.models import Todo, User
 from app.database import db, todo_collection, user_collection
 from app.auth import hash_password, verify_password
 from bson import ObjectId # Import ObjectId to handle MongoDB's unique identifiers (id's)
+from fastapi import Request
+from fastapi.responses import RedirectResponse
+from app.oauth_config import oauth
 
 router = APIRouter() # Create an instance of APIRouter to define our API routes
 
@@ -56,3 +59,39 @@ async def signin_user(user: User):
         return {"Message": "Invalid Password"}
     
     return {"Message": "Signed in Successfully", "User_id": str(exist["_id"])}
+
+@router.get("/auth/google")
+async def google_login(request: Request):
+    redirect_uri = request.url_for("auth")
+    return await oauth.google.authorize_redirect(
+        request,
+        redirect_uri
+    )
+
+from fastapi.responses import HTMLResponse
+
+@router.get("/auth")
+async def auth(request: Request):
+    token = await oauth.google.authorize_access_token(request)
+    user = token["userinfo"]
+    email = user["email"]
+    db_user = user_collection.find_one({"email": email})
+    if not db_user:
+        result = user_collection.insert_one({
+            "email": email,
+            "oauth": "google"
+        })
+        user_id = str(result.inserted_id)
+    else:
+        user_id = str(db_user["_id"])
+        
+    html_content = f"""
+    <html><body>
+    <script>
+      localStorage.setItem('user_id', '{user_id}');
+      window.location.href = '/';
+    </script>
+    </body></html>
+    """
+    return HTMLResponse(content=html_content)
+    
